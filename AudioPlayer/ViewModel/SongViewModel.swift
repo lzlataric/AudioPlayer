@@ -11,25 +11,25 @@ import Combine
 
 public class SongViewModel: ObservableObject{
     
-    @Published var currentSong: Song = songs[1]
+    @Published var current: Int = 1
     @Published var allSongs: [Song] = songs
     @Published var favouriteSongs: [Song] = []
+    @Published var songQueue: [Song] = songs
     @Published var playing = false
     @Published var start = true
     var cancellable: AnyCancellable? = nil
     var player: AVPlayer?
     
     init(){
-        cancellable = $currentSong
-            .removeDuplicates()
-            .sink(receiveValue: {song in
-                if self.playing == true{
-                    let playerItem = AVPlayerItem(url: song.url)
+            cancellable = $current
+            .sink(receiveValue: {songNum in
+                if self.playing == true && !self.songQueue.isEmpty{
+                    let playerItem = AVPlayerItem(url: self.songQueue[songNum].url)
                     self.playSong(playerItem: playerItem)
                     self.playing = true
                 }
-                if self.start == true{
-                    let playerItem = AVPlayerItem(url: song.url)
+                if self.start == true && !self.songQueue.isEmpty{
+                    let playerItem = AVPlayerItem(url: self.songQueue[songNum].url)
                     self.playSong(playerItem: playerItem)
                     self.playing = true
                     self.stopSong()
@@ -55,36 +55,31 @@ public class SongViewModel: ObservableObject{
     func stopSong(){
         if playing == true{
             player?.pause()
-        }else{
+        }
+        else{
             player?.play()
         }
         playing.toggle()
+        self.start = false
     }
     
     func nextSong(){
-        let index = allSongs.firstIndex(of: currentSong)!
-        
-        if(index == allSongs.count-1){
-            let nextIndex = 0
-            currentSong = allSongs[nextIndex]
+        if(self.current == songQueue.count-1){
+            current = 0
         }
         else{
-            let nextIndex = index+1
-            currentSong = allSongs[nextIndex]
+            current+=1
         }
     }
     
     func previousSong(){
-        let index = allSongs.firstIndex(of: currentSong)!
-        
-        if(index == 0){
-            let nextIndex = allSongs.count-1
-            currentSong = allSongs[nextIndex]
+        if(self.current == 0){
+            current = songQueue.count-1
         }
         else{
-            let nextIndex = index-1
-            currentSong = allSongs[nextIndex]
+            current-=1
         }
+        
     }
     
     func toggleFavourites(song: Song) {

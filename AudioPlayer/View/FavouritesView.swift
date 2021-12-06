@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct FavouritesView: View {
     @ObservedObject var viewModel: SongViewModel
@@ -15,7 +16,7 @@ struct FavouritesView: View {
                 ScrollView{
                     ForEach(viewModel.favouriteSongs, id: \.self) { song in
                         HStack{
-                            if viewModel.currentSong == song{
+                            if viewModel.current == viewModel.songQueue.firstIndex(of: song){
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 15))
                                     .padding(.leading, 20)
@@ -36,19 +37,18 @@ struct FavouritesView: View {
                             }else{
                                 Image(systemName: "heart")
                             }
-                            
-                            
-                            
                         }
                         .frame(width: 350, height: 50, alignment: .leading)
                         .border(Color.black)
                         .onTapGesture{
                             viewModel.playing = true
-                            viewModel.currentSong = song
+                            viewModel.current = viewModel.songQueue.firstIndex(of: song) ?? 0
                         }
                         .onLongPressGesture{
                             //TODO: Favourites
                             viewModel.toggleFavourites(song: song)
+                            viewModel.songQueue.removeAll()
+                            viewModel.songQueue = viewModel.favouriteSongs
                         }
                     }
                 }
@@ -74,7 +74,13 @@ struct FavouritesView: View {
                     Image(systemName: "play.fill")
                         .font(.system(size: 30))
                         .onTapGesture{
-                            viewModel.stopSong()
+                            if !viewModel.songQueue.isEmpty{
+                                if viewModel.start == true{
+                                    let playerItem = AVPlayerItem(url: viewModel.songQueue[viewModel.current].url)
+                                    viewModel.playSong(playerItem: playerItem)
+                                }
+                                viewModel.stopSong()
+                            }
                         }
                 }
                 
@@ -88,8 +94,19 @@ struct FavouritesView: View {
         }
         .onAppear{
             if !viewModel.favouriteSongs.isEmpty{
-            viewModel.currentSong = viewModel.favouriteSongs[0]
-            viewModel.start = false
+                viewModel.playing = true
+                viewModel.songQueue.removeAll()
+                viewModel.songQueue = viewModel.favouriteSongs
+                viewModel.current = 0
+                viewModel.start = false
+                viewModel.stopSong()
+            }else{
+                viewModel.playing = true
+                viewModel.songQueue.removeAll()
+                viewModel.songQueue = viewModel.favouriteSongs
+                viewModel.current = 0
+                viewModel.start = true
+                viewModel.stopSong()
             }
         }
     }

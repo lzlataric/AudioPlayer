@@ -17,7 +17,7 @@ struct PlayerView: View {
                 ScrollView{
                     ForEach(viewModel.allSongs, id: \.self) { song in
                         HStack{
-                            if viewModel.currentSong == song{
+                            if viewModel.current == viewModel.songQueue.firstIndex(of: song){
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 15))
                                     .padding(.leading, 20)
@@ -38,18 +38,14 @@ struct PlayerView: View {
                             }else{
                                 Image(systemName: "heart")
                             }
-                            
-                            
-                            
                         }
                         .frame(width: 350, height: 50, alignment: .leading)
                         .border(Color.black)
                         .onTapGesture{
                             viewModel.playing = true
-                            viewModel.currentSong = song
+                            viewModel.current = viewModel.songQueue.firstIndex(of: song) ?? 0
                         }
                         .onLongPressGesture{
-                            //TODO: Favourites
                             viewModel.toggleFavourites(song: song)
                         }
                     }
@@ -89,8 +85,11 @@ struct PlayerView: View {
             .padding(.bottom, 50)
         }
         .onAppear{
-            viewModel.currentSong = viewModel.allSongs[0]
-            viewModel.start = false
+            viewModel.songQueue.removeAll()
+            viewModel.songQueue = viewModel.allSongs
+            viewModel.playing = false
+            viewModel.current = 0
+            viewModel.start = true
         }
     }
 }
